@@ -7,59 +7,82 @@ from repair import repair
 import json
 
 st.set_page_config(page_title="AI App Compiler", layout="wide")
+
+if "prompt" not in st.session_state:
+    st.session_state.prompt = ""
+
+sample_prompts = [
+    "Build Hospital Management System with login dashboard reports notification search",
+    "Create an Ecommerce application with login checkout payment and search",
+    "Develop a Student Portal with login dashboard courses and notifications"
+]
+
+with st.sidebar:
+    st.title("AI App Compiler")
+    st.write("Generate app blueprints from natural language requirements.")
+    st.write("### Example prompts")
+    for sample in sample_prompts:
+        if st.button(sample, key=sample):
+            st.session_state.prompt = sample
+    st.markdown("---")
+    st.write("### How to use")
+    st.write("1. Enter a prompt describing the app you want.")
+    st.write("2. Click Generate Blueprint.")
+    st.write("3. Download the generated JSON blueprint.")
+
 st.title("🚀 AI App Compiler")
-st.markdown("Convert natural language prompts into application blueprints")
+st.markdown("Convert natural language prompts into application blueprints for UI, API, database, and auth.")
 
-prompt = st.text_area("Enter your app prompt:", height=100, placeholder="e.g., Build Hospital Management System with login dashboard reports notification search")
+prompt = st.text_area(
+    "Enter your app prompt:",
+    value=st.session_state.prompt,
+    height=140,
+    placeholder="e.g., Build Hospital Management System with login dashboard reports notification search"
+)
 
-if st.button("Generate Blueprint", type="primary"):
+generate = st.button("Generate Blueprint", type="primary")
+
+if generate:
     if not prompt.strip():
-        st.error("Please enter a prompt")
+        st.error("Please enter a prompt before generating a blueprint.")
     else:
+        st.session_state.prompt = prompt
         with st.spinner("Generating blueprint..."):
             try:
                 intent = extract_intent(prompt)
-                st.info(f"✓ Intent Detected: {intent['app_type']} App")
-                
                 design = generate_design(intent)
-                st.info(f"✓ Design Generated: {len(design['flows'])} flows detected")
-                
                 schema = generate_schema(design)
-                st.info(f"✓ Schema Generated")
-                
+
                 valid, missing = validate(schema)
                 if not valid:
-                    st.warning(f"⚠ Validation Issues: {missing}")
                     schema = repair(schema)
-                    st.info("✓ Auto-repair applied")
+                    validation_message = f"⚠ Validation issues found and repaired: {missing}"
+                    st.warning(validation_message)
                 else:
-                    st.success("✓ Validation Passed")
-                
-                col1, col2 = st.columns(2)
+                    st.success("✓ Validation passed")
+
+                st.success("✅ Blueprint Generated Successfully!")
+
+                col1, col2 = st.columns([2, 1])
                 with col1:
                     st.subheader("📋 Generated Blueprint")
                     st.json(schema)
-                
                 with col2:
                     st.subheader("🎯 Application Overview")
-                    st.write("**Pages:**")
+                    st.markdown(f"**Detected app type:** {intent['app_type']}")
+                    st.markdown("**Pages**")
                     for page in schema["ui"]["pages"]:
-                        st.write(f"  • {page}")
-                    
-                    st.write("**Entities:**")
+                        st.write(f"- {page}")
+                    st.markdown("**Entities**")
                     for table in schema["database"]["tables"]:
-                        st.write(f"  • {table}")
-                    
-                    st.write("**API Endpoints:**")
+                        st.write(f"- {table}")
+                    st.markdown("**API Endpoints**")
                     for api in schema["api"]["endpoints"]:
-                        st.write(f"  • {api['path']} ({', '.join(api['methods'])})")
-                    
-                    st.write("**Roles:**")
+                        st.write(f"- `{api['path']}`: {', '.join(api['methods'])}")
+                    st.markdown("**Roles**")
                     for role in schema["auth"]["roles"]:
-                        st.write(f"  • {role}")
-                
-                st.success("✅ Blueprint Generated Successfully!")
-                
+                        st.write(f"- {role}")
+
                 json_str = json.dumps(schema, indent=2)
                 st.download_button(
                     label="Download Blueprint (JSON)",
@@ -67,7 +90,7 @@ if st.button("Generate Blueprint", type="primary"):
                     file_name="blueprint.json",
                     mime="application/json"
                 )
-                
+
             except Exception as e:
                 st.error(f"❌ Error: {str(e)}")
-                st.error("Please check your prompt and try again")
+                st.error("Please check your prompt and try again.")
