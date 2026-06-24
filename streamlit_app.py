@@ -30,8 +30,34 @@ with st.sidebar:
     st.write("2. Click Generate Blueprint.")
     st.write("3. Download the generated JSON blueprint.")
 
-st.title("🚀 AI App Compiler")
-st.markdown("Convert natural language prompts into application blueprints for UI, API, database, and auth.")
+st.markdown(
+    """
+    <style>
+    .hero-box {
+        background: linear-gradient(135deg, #7c83fd 0%, #cb74ff 100%);
+        padding: 24px;
+        border-radius: 18px;
+        color: white;
+        box-shadow: 0 30px 80px rgba(124, 131, 253, 0.18);
+        margin-bottom: 24px;
+    }
+    .hero-box h1 {
+        margin: 0;
+        font-size: 2.5rem;
+    }
+    .hero-box p {
+        margin: 8px 0 0;
+        font-size: 1.05rem;
+        opacity: 0.92;
+    }
+    </style>
+    <div class='hero-box'>
+        <h1>AI App Compiler</h1>
+        <p>Generate app blueprints from natural language prompts with UI, API, database, and auth definitions.</p>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 
 prompt = st.text_area(
     "Enter your app prompt:",
@@ -63,12 +89,18 @@ if generate:
 
                 st.success("✅ Blueprint Generated Successfully!")
 
-                col1, col2 = st.columns([2, 1])
-                with col1:
+                app_metrics, result_panel = st.columns([1, 2])
+                with app_metrics:
+                    st.metric("Pages", len(schema["ui"]["pages"]))
+                    st.metric("Entities", len(schema["database"]["tables"]))
+                    st.metric("API Endpoints", len(schema["api"]["endpoints"]))
+                    st.metric("Roles", len(schema["auth"]["roles"]))
+
+                with result_panel:
                     st.subheader("📋 Generated Blueprint")
                     st.json(schema)
-                with col2:
-                    st.subheader("🎯 Application Overview")
+
+                with st.expander("View summary details"):
                     st.markdown(f"**Detected app type:** {intent['app_type']}")
                     st.markdown("**Pages**")
                     for page in schema["ui"]["pages"]:
